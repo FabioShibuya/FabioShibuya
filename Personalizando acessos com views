@@ -1,0 +1,65 @@
+create or replace view departamento_location_view as
+select Dname, Mgr_ssn, Mgr_start_date, Dept_create_date from departament d
+inner join dept_locations l on d.Dnumber=l.Dnumber;
+select * from departamento_location_view;
+
+-- drop view departamento_employee_view;
+
+# Número de empregados por departamento e localidade 
+create or replace view departamento_employee_view as
+select concat(Fname, ' ', Minit, ' ', Lname ) as nome,  Ssn, Address as Endereco, Dno as numero_empregado from employee e
+inner join departament d on e.Ssn = d.Mgr_ssn;
+select * from departamento_employee_view;
+
+-- drop view departamento_gerentes_view;
+# Lista de departamentos e seus gerentes 
+create or replace view departamento_gerentes_view as
+select d.Dname as departamento , e.Fname as gerente from departament d, employee e
+where d.Mgr_ssn = e.Super_ssn;
+select * from departamento_gerentes_view;
+
+drop view projeto_view;
+# Projetos com maior número de empregados (ex: por ordenação desc) 
+create or replace view projeto_view as
+select p.Pname as Nome_projeto, e.Fname as empregado from project p, employee e
+   WHERE (select count(*) as quantidade from employee where p.Dnum = e.Dno)
+order by Pname;
+
+select * from projeto_view;
+
+
+# Lista de projetos, departamentos e gerentes
+create or replace view projeto_view_v1 as
+ select distinct p.Pname as projeto, d.Dname as departamento, concat(e.Fname, ' ', e.Lname) as Gerente
+       from departament as d, employee as e, work_on as w, project as p
+       where (d.Dnumber=e.Dno and e.Ssn=d.Mgr_ssn and w.Pno = p.Pnumber)
+       order by d.Dname asc;
+select * from projeto_view_v1;
+
+# Quais empregados possuem dependentes e se são gerentes 
+create or replace view projeto_view_v2 as
+select distinct concat(e.Fname, ' ', e.Lname) as Empregado, Dependent_name as Dependente
+       from employee as e, dependent as p
+        where (p.Essn=e.Ssn and e.Super_ssn = p.Essn);
+select * from projeto_view_v2;
+       
+       
+
+
+delimiter \\ 
+create trigger superssn_check before insert on company_constraints.employee 
+for each row 
+	begin 
+		case new.Dno 
+			when 1 then set new.Super_ssn = '333445555'; 
+			when 2 then set new.Super_ssn = null; 
+			when 3 then set new.Super_ssn = null; 
+			when 4 then set new.Super_ssn = '123456789'; 
+			when 5 then set new.Super_ssn = '987654321'; 
+		end case; 
+	end \\ 
+delimiter ;  
+drop trigger salary_check;
+show triggers from company_constraints;
+
+
